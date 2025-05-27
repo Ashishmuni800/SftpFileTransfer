@@ -1,0 +1,15 @@
+[
+  {
+    "SourceHost": "43.224.136.63",
+    "SourcePort": 5726,
+    "SourceUser": "pnbpfmsdatapushing",
+    "SourcePassword": "2@!@#$sdG55#$bsj",
+    "RemoteDirectory": "/home/pnbdata/MGNR/FILES/",
+    "FilenamePrefixes": [ "N5132Bk", "T5132Bk" ],
+    "TargetHost": "43.224.136.63",
+    "TargetPort": 5726,
+    "TargetUser": "pnbpfmsdatapushing",
+    "TargetPassword": "2@!@#$sdG55#$bsj",
+    "TargetDirectory": "/home/pnbdata/MGNR/REPORTS"
+  }
+]
