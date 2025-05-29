@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SftpFileTransfer;
 
 class Program
 {
@@ -16,7 +17,10 @@ class Program
             })
             .ConfigureServices((hostContext, services) =>
             {
+                services.AddScoped<SetTime, SetTime>();
                 services.AddHostedService<SftpTransferService>();
+                services.AddHostedService<SftpTransferReqFileService>();
+                services.AddHostedService<SftpTransferNEFTReturnFileService>();
             })
             .Build()
             .Run();

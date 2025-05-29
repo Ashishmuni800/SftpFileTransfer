@@ -28,7 +28,14 @@ public class TransferScheduler
                 var jobs = LoadJobs();
                 foreach (var job in jobs)
                 {
-                    ExecuteJob(job);
+                    if (job.IsSchedulerActiveForPayResponse)
+                    {
+                        ExecuteJob(job);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Service is not start due to transfer-config.json like IsSchedulerActiveForPayResponse parameter is false and please update is true for start service");
+                    }
                 }
             }
             catch (Exception ex)
@@ -69,50 +76,58 @@ public class TransferScheduler
 
             foreach (var file in files)
             {
-                string tempFile = Path.GetTempFileName();
-                try
+                if ((file.Name.EndsWith(".TXT.SUCCESS", StringComparison.OrdinalIgnoreCase) ||
+                   file.Name.EndsWith(".TXT.FAILURE", StringComparison.OrdinalIgnoreCase)))
                 {
-                    Console.WriteLine($"Downloading {file.Name}...");
-                    using (var fs = File.Create(tempFile))
+                    string tempFile = Path.GetTempFileName();
+                    try
                     {
-                        sftpSource.DownloadFile(file.FullName, fs);
-                    }
-
-                    using (var sftpTarget = new SftpClient(job.TargetHost, job.TargetPort, job.TargetUser, job.TargetPassword))
-                    {
-                        sftpTarget.Connect();
-                        string targetPath = Path.Combine(job.TargetDirectory, file.Name).Replace("\\", "/");
-                        using (var fs = File.OpenRead(tempFile))
+                        Console.WriteLine($"Downloading {file.Name}...");
+                        using (var fs = File.Create(tempFile))
                         {
-                            sftpTarget.UploadFile(fs, targetPath);
+                            sftpSource.DownloadFile(file.FullName, fs);
                         }
-                        sftpTarget.Disconnect();
+
+                        using (var sftpTarget = new SftpClient(job.TargetHost, job.TargetPort, job.TargetUser, job.TargetPassword))
+                        {
+                            sftpTarget.Connect();
+                            string targetPath = Path.Combine(job.TargetDirectory, file.Name).Replace("\\", "/");
+                            using (var fs = File.OpenRead(tempFile))
+                            {
+                                sftpTarget.UploadFile(fs, targetPath);
+                            }
+                            sftpTarget.Disconnect();
+                        }
+
+                        Console.WriteLine($"Transferred {file.Name} successfully.");
+
+                        // Ensure DONE folder exists
+                        string doneDirectory = Path.Combine(job.RemoteDirectory, "DONE").Replace("\\", "/");
+                        if (!sftpSource.Exists(doneDirectory))
+                        {
+                            sftpSource.CreateDirectory(doneDirectory);
+                        }
+
+                        // Move file to DONE folder
+                        string sourcePath = file.FullName;
+                        string destinationPath = Path.Combine(doneDirectory, file.Name).Replace("\\", "/");
+                        sftpSource.RenameFile(sourcePath, destinationPath);
+
+                        Console.WriteLine($"Moved {file.Name} to DONE folder.");
                     }
-
-                    Console.WriteLine($"Transferred {file.Name} successfully.");
-
-                    // Ensure DONE folder exists
-                    string doneDirectory = Path.Combine(job.RemoteDirectory, "DONE").Replace("\\", "/");
-                    if (!sftpSource.Exists(doneDirectory))
+                    catch (Exception ex)
                     {
-                        sftpSource.CreateDirectory(doneDirectory);
+                        Console.WriteLine($"[ERROR] Failed to transfer {file.Name}: {ex.Message}");
                     }
-
-                    // Move file to DONE folder
-                    string sourcePath = file.FullName;
-                    string destinationPath = Path.Combine(doneDirectory, file.Name).Replace("\\", "/");
-                    sftpSource.RenameFile(sourcePath, destinationPath);
-
-                    Console.WriteLine($"Moved {file.Name} to DONE folder.");
+                    finally
+                    {
+                        if (File.Exists(tempFile))
+                            File.Delete(tempFile);
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"[ERROR] Failed to transfer {file.Name}: {ex.Message}");
-                }
-                finally
-                {
-                    if (File.Exists(tempFile))
-                        File.Delete(tempFile);
+                    continue;
                 }
             }
 

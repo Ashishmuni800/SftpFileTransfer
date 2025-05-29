@@ -1,15 +1,23 @@
 [
   {
+    "IsSchedulerActiveForPayRequest": true,
+    "IsSchedulerActiveForPayResponse": true,
+    "IsSchedulerActiveForPayNEFTReturn": true,
     "SourceHost": "43.224.136.63",
     "SourcePort": 5726,
     "SourceUser": "pnbpfmsdatapushing",
     "SourcePassword": "2@!@#$sdG55#$bsj",
-    "RemoteDirectory": "/home/pnbdata/MGNR/FILES/",
+    "RemoteDirectory": "/home/pnbdata/BKSY/finreport/stpcron/MGNR/REPORTS",
+    "RemoteReqFileDirectory": "/home/pnbdata/BKSY/finreport/stpcron/MGNR/FILES",
+    "RemoteNEFTReturnFileDirectory": "/home/pnbdata/BKSY/finreport/stpcron/CPSMS/IFMS/MORNING_CHEKING/MORNING_CHECKING_95/BKSYIFMS",
     "FilenamePrefixes": [ "N5132Bk", "T5132Bk" ],
+    "FilenameNEFTReturnPrefixes": [ "BKSYIFMS_NEFT_INW", "BKSYIFMS_NEFT" ],
     "TargetHost": "43.224.136.63",
     "TargetPort": 5726,
     "TargetUser": "pnbpfmsdatapushing",
     "TargetPassword": "2@!@#$sdG55#$bsj",
-    "TargetDirectory": "/home/pnbdata/MGNR/REPORTS"
+    "TargetDirectory": "/home/pnbdata/BKSY/JAP_IT/MGNR/REPORTS",
+    "TargetReqFileDirectory": "/home/pnbdata/BKSY/JAP_IT/MGNR/FILES",
+    "TargetNEFTReturnFileDirectory": "/home/pnbdata/BKSY/JAP_IT/CPSMS/IFMS/MORNING_CHEKING/MORNING_CHECKING_95/BKSYIFMS"
   }
 ]
