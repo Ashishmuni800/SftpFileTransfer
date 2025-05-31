@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Renci.SshNet;
+using Renci.SshNet.Sftp;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text.Json;
 using System.Threading;
-using Renci.SshNet;
-using Renci.SshNet.Sftp;
 
 public class TransferReqFileScheduler
 {
@@ -93,13 +94,37 @@ public class TransferReqFileScheduler
                         {
                             sftpTarget.UploadFile(fs, targetPath);
                         }
+                        //short permission = Convert.ToInt16("0666", 8);
+                        //sftpTarget.ChangePermissions(targetPath, permission);
+                        FileInfo fileInfo = new FileInfo(targetPath);
+
+                        if (fileInfo.Exists) // Check if the file exists
+                        {
+                            FileSecurity fileSecurity = fileInfo.GetAccessControl();
+
+                            // Add "Everyone" with read and write access
+                            FileSystemAccessRule readWriteRule = new FileSystemAccessRule(
+                                "Everyone",
+                                FileSystemRights.FullControl,
+                                AccessControlType.Allow
+                            );
+                            fileSecurity.AddAccessRule(readWriteRule);
+
+                            fileInfo.SetAccessControl(fileSecurity);
+                            Console.WriteLine($"File permissions updated for: {targetPath}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"File not found: {targetPath}");
+                        }
                         sftpTarget.Disconnect();
                     }
+
 
                     Console.WriteLine($"Transferred {file.Name} successfully.");
 
                     // Ensure DONE folder exists
-                    string doneDirectory = Path.Combine(job.RemoteReqFileDirectory, "DONE").Replace("\\", "/");
+                    string doneDirectory = Path.Combine(job.TargetReqFileDirectory, "DONE").Replace("\\", "/");
                     if (!sftpSource.Exists(doneDirectory))
                     {
                         sftpSource.CreateDirectory(doneDirectory);
