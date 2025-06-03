@@ -11,9 +11,9 @@ class Program
             .UseWindowsService()
             .ConfigureLogging(logging =>
             {
-                logging.ClearProviders();    
-                logging.AddConsole();         
-                
+                logging.ClearProviders();
+                logging.AddConsole();
+
             })
             .ConfigureServices((hostContext, services) =>
             {
@@ -26,3 +26,4 @@ class Program
             .Run();
     }
 }
+

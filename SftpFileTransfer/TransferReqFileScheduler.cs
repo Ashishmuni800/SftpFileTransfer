@@ -35,7 +35,7 @@ public class TransferReqFileScheduler
                     }
                     else
                     {
-                        Console.WriteLine("Service is not start due to transfer-config.json like IsSchedulerActiveForPayRequest parameter is false and please update is true for start service");
+                        Console.WriteLine("The service is not starting because the IsSchedulerActiveForPayRequest parameter in transfer-config.json is set to false. Please update it to true to start the service.");
                     }
                 }
             }
@@ -94,29 +94,8 @@ public class TransferReqFileScheduler
                         {
                             sftpTarget.UploadFile(fs, targetPath);
                         }
-                        //short permission = Convert.ToInt16("0666", 8);
-                        //sftpTarget.ChangePermissions(targetPath, permission);
-                        FileInfo fileInfo = new FileInfo(targetPath);
-
-                        if (fileInfo.Exists) // Check if the file exists
-                        {
-                            FileSecurity fileSecurity = fileInfo.GetAccessControl();
-
-                            // Add "Everyone" with read and write access
-                            FileSystemAccessRule readWriteRule = new FileSystemAccessRule(
-                                "Everyone",
-                                FileSystemRights.FullControl,
-                                AccessControlType.Allow
-                            );
-                            fileSecurity.AddAccessRule(readWriteRule);
-
-                            fileInfo.SetAccessControl(fileSecurity);
-                            Console.WriteLine($"File permissions updated for: {targetPath}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"File not found: {targetPath}");
-                        }
+                        short permission = Convert.ToInt16("666", 10);
+                        sftpTarget.ChangePermissions(targetPath, permission);
                         sftpTarget.Disconnect();
                     }
 

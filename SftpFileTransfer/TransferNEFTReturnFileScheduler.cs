@@ -34,7 +34,7 @@ public class TransferNEFTReturnFileScheduler
                     }
                     else
                     {
-                        Console.WriteLine("Service is not start due to transfer-config.json like IsSchedulerActiveForPayNEFTReturn parameter is false and please update is true for start service");
+                        Console.WriteLine("The service is not starting because the IsSchedulerActiveForPayNEFTReturn parameter in transfer-config.json is set to false. Please update it to true to start the service.");
                     }
                 }
             }
