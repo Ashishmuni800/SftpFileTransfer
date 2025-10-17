@@ -94,7 +94,25 @@ public class TransferScheduler
                             string targetPath = Path.Combine(job.TargetDirectory, file.Name).Replace("\\", "/");
                             using (var fs = File.OpenRead(tempFile))
                             {
-                                sftpTarget.UploadFile(fs, targetPath);
+                                
+                                //var ExistPath = "/home/pnbdata/BKSY/JAP_IT/MGNR/REPORTS/DONE";
+                                //var ExistPath2 = "/home/pnbdata/BKSY/JAP_IT/MGNR/REPORTS";
+                                var files2 = sftpSource.ListDirectory(job.TargetDirectoryDONE)
+                                .Where(f => !f.IsDirectory && job.FilenamePrefixes.Any(prefix => f.Name.StartsWith(prefix)))
+                                .ToList();
+                                var files3 = sftpSource.ListDirectory(job.TargetDirectory)
+                                .Where(f => !f.IsDirectory && job.FilenamePrefixes.Any(prefix => f.Name.StartsWith(prefix)))
+                                .ToList();
+                                foreach (var item in files2)
+                                {
+                                    foreach (var item1 in files3)
+                                    {
+                                        if (item.FullName != file.FullName && item1.FullName !=file.FullName)
+                                        {
+                                            sftpTarget.UploadFile(fs, targetPath);
+                                        }
+                                    }
+                                }
                             }
                             sftpTarget.Disconnect();
                         }

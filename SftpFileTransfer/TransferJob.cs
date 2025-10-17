@@ -26,4 +26,5 @@ public class TransferJob
     public string TargetDirectory { get; set; } // e.g., "/target/path/"
     public string TargetReqFileDirectory { get; set; } // e.g., "/target/path/"
     public string TargetNEFTReturnFileDirectory { get; set; } // e.g., "/target/path/"
+    public string TargetDirectoryDONE { get; set; } 
 }
