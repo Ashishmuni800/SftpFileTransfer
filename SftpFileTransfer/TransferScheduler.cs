@@ -68,7 +68,6 @@ public class TransferScheduler
             if (!files.Any())
             {
                 Console.WriteLine("No matching files found.");
-                sftpSource.Disconnect();
                 return;
             }
 
@@ -76,81 +75,72 @@ public class TransferScheduler
 
             foreach (var file in files)
             {
-                if ((file.Name.EndsWith(".TXT.SUCCESS", StringComparison.OrdinalIgnoreCase) ||
-                   file.Name.EndsWith(".TXT.FAILURE", StringComparison.OrdinalIgnoreCase)))
-                {
-                    string tempFile = Path.GetTempFileName();
-                    try
-                    {
-                        Console.WriteLine($"Downloading {file.Name}...");
-                        using (var fs = File.Create(tempFile))
-                        {
-                            sftpSource.DownloadFile(file.FullName, fs);
-                        }
+                if (!(file.Name.EndsWith(".TXT.SUCCESS", StringComparison.OrdinalIgnoreCase) ||
+                      file.Name.EndsWith(".TXT.FAILURE", StringComparison.OrdinalIgnoreCase)))
+                    continue;
 
-                        using (var sftpTarget = new SftpClient(job.TargetHost, job.TargetPort, job.TargetUser, job.TargetPassword))
+                string tempFile = Path.GetTempFileName();
+
+                try
+                {
+                    Console.WriteLine($"Processing file: {file.Name}");
+
+                    using (var fs = File.Create(tempFile))
+                    {
+                        sftpSource.DownloadFile(file.FullName, fs);
+                    }
+
+                    using (var sftpTarget = new SftpClient(job.TargetHost, job.TargetPort, job.TargetUser, job.TargetPassword))
+                    {
+                        sftpTarget.Connect();
+
+                        string targetPath = Path.Combine(job.TargetDirectory, file.Name).Replace("\\", "/");
+                        string donePath = Path.Combine(job.TargetDirectoryDONE, file.Name).Replace("\\", "/");
+
+                        // ✅ Check if the file already exists on target or DONE
+                        bool alreadyExists = sftpTarget.Exists(targetPath) || sftpTarget.Exists(donePath);
+
+                        if (alreadyExists)
                         {
-                            sftpTarget.Connect();
-                            string targetPath = Path.Combine(job.TargetDirectory, file.Name).Replace("\\", "/");
+                            Console.WriteLine($"File '{file.Name}' already exists on target — skipping transfer.");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Uploading '{file.Name}' to target...");
                             using (var fs = File.OpenRead(tempFile))
                             {
-                                
-                                //var ExistPath = "/home/pnbdata/BKSY/JAP_IT/MGNR/REPORTS/DONE";
-                                //var ExistPath2 = "/home/pnbdata/BKSY/JAP_IT/MGNR/REPORTS";
-                                var files2 = sftpSource.ListDirectory(job.TargetDirectoryDONE)
-                                .Where(f => !f.IsDirectory && job.FilenamePrefixes.Any(prefix => f.Name.StartsWith(prefix)))
-                                .ToList();
-                                var files3 = sftpSource.ListDirectory(job.TargetDirectory)
-                                .Where(f => !f.IsDirectory && job.FilenamePrefixes.Any(prefix => f.Name.StartsWith(prefix)))
-                                .ToList();
-                                foreach (var item in files2)
-                                {
-                                    foreach (var item1 in files3)
-                                    {
-                                        if (item.FullName != file.FullName && item1.FullName !=file.FullName)
-                                        {
-                                            sftpTarget.UploadFile(fs, targetPath);
-                                        }
-                                    }
-                                }
+                                sftpTarget.UploadFile(fs, targetPath);
                             }
-                            sftpTarget.Disconnect();
+                            Console.WriteLine($"File '{file.Name}' transferred successfully.");
                         }
 
-                        Console.WriteLine($"Transferred {file.Name} successfully.");
-
-                        // Ensure DONE folder exists
-                        string doneDirectory = Path.Combine(job.RemoteDirectory, "DONE").Replace("\\", "/");
-                        if (!sftpSource.Exists(doneDirectory))
-                        {
-                            sftpSource.CreateDirectory(doneDirectory);
-                        }
-
-                        // Move file to DONE folder
-                        string sourcePath = file.FullName;
-                        string destinationPath = Path.Combine(doneDirectory, file.Name).Replace("\\", "/");
-                        sftpSource.RenameFile(sourcePath, destinationPath);
-
-                        Console.WriteLine($"Moved {file.Name} to DONE folder.");
+                        sftpTarget.Disconnect();
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[ERROR] Failed to transfer {file.Name}: {ex.Message}");
-                    }
-                    finally
-                    {
-                        if (File.Exists(tempFile))
-                            File.Delete(tempFile);
-                    }
+
+                    // ✅ Move to DONE folder on source
+                    string doneDirectory = Path.Combine(job.RemoteDirectory, "DONE").Replace("\\", "/");
+                    if (!sftpSource.Exists(doneDirectory))
+                        sftpSource.CreateDirectory(doneDirectory);
+
+                    string destinationPath = Path.Combine(doneDirectory, file.Name).Replace("\\", "/");
+                    sftpSource.RenameFile(file.FullName, destinationPath);
+
+                    Console.WriteLine($"Moved '{file.Name}' to DONE folder.");
                 }
-                else
+                catch (Exception ex)
                 {
-                    continue;
+                    Console.WriteLine($"[ERROR] Failed to process {file.Name}: {ex.Message}");
+                }
+                finally
+                {
+                    if (File.Exists(tempFile))
+                        File.Delete(tempFile);
                 }
             }
 
             sftpSource.Disconnect();
         }
     }
+
 
 }
